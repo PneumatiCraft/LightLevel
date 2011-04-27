@@ -66,7 +66,12 @@ public class LightLevel extends JavaPlugin {
 			usePermissions = true;
 		}
 	}
-	
+	/**
+	 * Check to see if Player p has the permission given
+	 * @param p The Player to check
+	 * @param permission The permission to check
+	 * @return True if the player has permission, false if not
+	 */
 	public boolean hasPermission(Player p, String permission) {
 		if (!usePermissions || p.isOp()) {
 			return true;
