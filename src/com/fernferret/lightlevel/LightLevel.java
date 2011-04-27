@@ -37,13 +37,12 @@ public class LightLevel extends JavaPlugin {
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		String commandName = command.getName().toLowerCase();
-		if (commandName.equalsIgnoreCase("lightlevel")) {
+		if (command.getName().equalsIgnoreCase("lightlevel")) {
 			if (sender instanceof Player && hasPermission((Player)sender, "lightlevel.use")) {
 				Player p = (Player) sender;
 				ArrayList<Block> target = (ArrayList<Block>) p.getLastTwoTargetBlocks(null, 50);
 				// If the block isn't air, continue, otherwise show error
-				if (!target.get(1).getType().equals(Material.matchMaterial("AIR"))) {
+				if (!target.get(1).getType().equals(Material.matchMaterial("AIR")) && target.size() >= 2) {
 					String numbercolor = getColorFromLightLevel(target.get(0).getLightLevel()).toString();
 					p.sendMessage(target.get(1).getType().name().toUpperCase() + ": " + numbercolor + target.get(0).getLightLevel());
 				} else {
@@ -77,7 +76,7 @@ public class LightLevel extends JavaPlugin {
 			return true;
 		}
 		if (!permissions.has(p, permission)) {
-			p.sendMessage(chatPrefixError  + "You don't have permission(" + permission + ") to do this!");
+			p.sendMessage(chatPrefixError  + "You don't have permission (" + permission + ") to do this!");
 			return false;
 		}
 		return true;
