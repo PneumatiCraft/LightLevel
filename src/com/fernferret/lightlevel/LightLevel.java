@@ -85,7 +85,7 @@ public class LightLevel extends JavaPlugin {
 	/**
 	 * Returns a chatcolor based on what the light level is. Allows visual change between good and bad levels
 	 * @param lightLevel
-	 * @return
+	 * @return The chatcolor that the number should be
 	 */
 	private ChatColor getColorFromLightLevel(byte lightLevel) {
 		// The level at which hostile mobs can spawn
