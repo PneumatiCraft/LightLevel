@@ -1,0 +1,8 @@
+name: LightLevel
+main: com.fernferret.lightlevel.LightLevel
+author: FernFerret
+version: 0.1
+commands:
+  lightlevel:
+    description: States the light level of the block you are looking at
+    usage: /<command>
