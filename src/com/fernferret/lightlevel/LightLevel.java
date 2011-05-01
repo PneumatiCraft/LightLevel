@@ -1,5 +1,6 @@
 package com.fernferret.lightlevel;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -9,8 +10,12 @@ import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.Event.Priority;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.config.Configuration;
 
 import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
@@ -19,39 +24,58 @@ public class LightLevel extends JavaPlugin {
 	
 	public static final Logger log = Logger.getLogger("Minecraft");
 	public static final String logPrefix = "[LightLevel]";
+	private static final String LIGHT_LEVEL_CONFIG = "LightLevel.yml";
+	public static final String WAND_KEY = "wand.item";
+	public static final Integer TORCH_ITEM = 50;
+	public static final String WAND_ENABLE_KEY = "wand.enable";
 	
 	private PermissionHandler permissions;
 	private boolean usePermissions;
 	private String chatPrefixError = ChatColor.RED.toString();
+	protected Configuration configLL;
+	private LLBlockListener blockListener;
+	
+	private ArrayList<Player> wandEnabled;
 	
 	@Override
 	public void onDisable() {
+		// TODO: Save users to file
 		log.info(logPrefix + " - Disabled");
 	}
 	
 	@Override
 	public void onEnable() {
+		// TODO: Load users from file
+		loadConfiguration();
 		checkPermissions();
+		PluginManager pm = getServer().getPluginManager();
+		blockListener = new LLBlockListener(this);
+		pm.registerEvent(Event.Type.BLOCK_DAMAGE, blockListener, Priority.Normal, this);
 		log.info(logPrefix + " - Version " + this.getDescription().getVersion() + " Enabled");
 	}
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (command.getName().equalsIgnoreCase("lightlevel")) {
-			if (sender instanceof Player && hasPermission((Player)sender, "lightlevel.use")) {
-				Player p = (Player) sender;
-				ArrayList<Block> target = (ArrayList<Block>) p.getLastTwoTargetBlocks(null, 50);
-				// If the block isn't air, continue, otherwise show error
-				if (!target.get(1).getType().equals(Material.matchMaterial("AIR")) && target.size() >= 2) {
-					String numbercolor = getColorFromLightLevel(target.get(0).getLightLevel()).toString();
-					p.sendMessage(target.get(1).getType().name().toUpperCase() + ": " + numbercolor + target.get(0).getLightLevel());
-				} else {
-					p.sendMessage(ChatColor.RED + "Get closer!");
-				}
+			if(sender instanceof Player) {
+				getLightLevel((Player)sender);
 			}
 			return true;
 		}
 		return false;
+	}
+
+	protected void getLightLevel(Player p) {
+		if (hasPermission((Player) p, "lightlevel.use")) {
+			ArrayList<Block> target = (ArrayList<Block>) p.getLastTwoTargetBlocks(null, 50);
+			// If the block isn't air, continue, otherwise show error
+			if (!target.get(1).getType().equals(Material.matchMaterial("AIR")) && target.size() >= 2) {
+				String numbercolor = getColorFromLightLevel(target.get(0).getLightLevel()).toString();
+				p.sendMessage(target.get(1).getType().name().toUpperCase() + ": " + numbercolor + target.get(0).getLightLevel());
+			} else {
+				p.sendMessage(ChatColor.RED + "Get closer!");
+			}
+		}
 	}
 	
 	/**
@@ -65,8 +89,10 @@ public class LightLevel extends JavaPlugin {
 			usePermissions = true;
 		}
 	}
+	
 	/**
 	 * Check to see if Player p has the permission given
+	 * 
 	 * @param p The Player to check
 	 * @param permission The permission to check
 	 * @return True if the player has permission, false if not
@@ -76,7 +102,7 @@ public class LightLevel extends JavaPlugin {
 			return true;
 		}
 		if (!permissions.has(p, permission)) {
-			p.sendMessage(chatPrefixError  + "You don't have permission (" + permission + ") to do this!");
+			p.sendMessage(chatPrefixError + "You don't have permission (" + permission + ") to do this!");
 			return false;
 		}
 		return true;
@@ -84,6 +110,7 @@ public class LightLevel extends JavaPlugin {
 	
 	/**
 	 * Returns a chatcolor based on what the light level is. Allows visual change between good and bad levels
+	 * 
 	 * @param lightLevel
 	 * @return The chatcolor that the number should be
 	 */
@@ -98,6 +125,20 @@ public class LightLevel extends JavaPlugin {
 		}
 		// Anything else, friendly mobs can spawn
 		return ChatColor.GREEN;
+	}
+	
+	private void loadConfiguration() {
+		getDataFolder().mkdirs();
+		configLL = new Configuration(new File(this.getDataFolder(), LIGHT_LEVEL_CONFIG));
+		configLL.load();
+		if (configLL.getProperty(WAND_ENABLE_KEY) == null) {
+			configLL.setProperty(WAND_ENABLE_KEY, true);
+			configLL.save();
+		}
+		if ((configLL.getProperty(WAND_KEY) == null) || !(configLL.getProperty(WAND_KEY) instanceof Integer)) {
+			configLL.setProperty(WAND_KEY, TORCH_ITEM);
+			configLL.save();
+		}
 	}
 	
 }
