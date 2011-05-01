@@ -6,3 +6,9 @@ commands:
   lightlevel:
     description: States the light level of the block you are looking at
     usage: /<command>
+  ll:
+    description: States the light level of the block you are looking at
+    usage: /<command>
+  llwand:
+    description: Toggles use of a wand item for showing light levels
+    usage: /<command>

@@ -28,6 +28,7 @@ public class LightLevel extends JavaPlugin {
 	public static final String WAND_KEY = "wand.item";
 	public static final Integer TORCH_ITEM = 50;
 	public static final String WAND_ENABLE_KEY = "wand.enable";
+	public static final String WAND_ENABLE_DEFAULT_KEY = "wand.default";
 	
 	private PermissionHandler permissions;
 	private boolean usePermissions;
@@ -48,6 +49,7 @@ public class LightLevel extends JavaPlugin {
 		// TODO: Load users from file
 		loadConfiguration();
 		checkPermissions();
+		wandEnabled = new ArrayList<Player>();
 		PluginManager pm = getServer().getPluginManager();
 		blockListener = new LLBlockListener(this);
 		pm.registerEvent(Event.Type.BLOCK_DAMAGE, blockListener, Priority.Normal, this);
@@ -56,13 +58,34 @@ public class LightLevel extends JavaPlugin {
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		if (command.getName().equalsIgnoreCase("lightlevel")) {
+		if (command.getName().equalsIgnoreCase("lightlevel") || command.getName().equalsIgnoreCase("ll")) {
 			if(sender instanceof Player) {
 				getLightLevel((Player)sender);
 			}
 			return true;
 		}
+		if (command.getName().equalsIgnoreCase("llwand")) {
+			if(sender instanceof Player) {
+				togglePlayerWand((Player)sender);
+			}
+			return true;
+		}
 		return false;
+	}
+	/**
+	 * Toggle whether or not a player wants to use the wand
+	 * @param p
+	 */
+	protected void togglePlayerWand(Player p) {
+		if(wandEnabled.contains(p)) {
+			wandEnabled.remove(p);
+		} else {
+			wandEnabled.add(p);
+		}
+	}
+	protected boolean playerHasWandEnabled(Player p) {
+		if(this.configLL.getBoolean(WAND_ENABLE_KEY, true))
+		return wandEnabled.contains(p);
 	}
 
 	protected void getLightLevel(Player p) {
@@ -131,12 +154,16 @@ public class LightLevel extends JavaPlugin {
 		getDataFolder().mkdirs();
 		configLL = new Configuration(new File(this.getDataFolder(), LIGHT_LEVEL_CONFIG));
 		configLL.load();
-		if (configLL.getProperty(WAND_ENABLE_KEY) == null) {
+		if ((configLL.getProperty(WAND_ENABLE_KEY) == null || !(configLL.getProperty(WAND_ENABLE_DEFAULT_KEY) instanceof Boolean)) {
 			configLL.setProperty(WAND_ENABLE_KEY, true);
 			configLL.save();
 		}
 		if ((configLL.getProperty(WAND_KEY) == null) || !(configLL.getProperty(WAND_KEY) instanceof Integer)) {
 			configLL.setProperty(WAND_KEY, TORCH_ITEM);
+			configLL.save();
+		}
+		if ((configLL.getProperty(WAND_ENABLE_DEFAULT_KEY) == null) || !(configLL.getProperty(WAND_ENABLE_DEFAULT_KEY) instanceof Boolean)) {
+			configLL.setProperty(WAND_ENABLE_DEFAULT_KEY, true);
 			configLL.save();
 		}
 	}
