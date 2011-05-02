@@ -82,17 +82,25 @@ public class LightLevel extends JavaPlugin {
 		} else {
 			wandEnabled.add(p);
 		}
+		if(playerHasWandEnabled(p)) {
+			p.sendMessage(ChatColor.GREEN + "Wand Enabled!");
+		} else {
+			p.sendMessage(ChatColor.RED + "Wand DISABLED!");
+		}
 	}
 	protected boolean playerHasWandEnabled(Player p) {
-		if(this.configLL.getBoolean(WAND_ENABLE_KEY, true))
+		if(this.configLL.getBoolean(WAND_ENABLE_DEFAULT_KEY, true)) {
+			return !wandEnabled.contains(p);
+		}
 		return wandEnabled.contains(p);
+		
 	}
 
 	protected void getLightLevel(Player p) {
 		if (hasPermission((Player) p, "lightlevel.use")) {
 			ArrayList<Block> target = (ArrayList<Block>) p.getLastTwoTargetBlocks(null, 50);
 			// If the block isn't air, continue, otherwise show error
-			if (!target.get(1).getType().equals(Material.matchMaterial("AIR")) && target.size() >= 2) {
+			if (target.size() >= 2 &&!target.get(1).getType().equals(Material.matchMaterial("AIR"))) {
 				String numbercolor = getColorFromLightLevel(target.get(0).getLightLevel()).toString();
 				p.sendMessage(target.get(1).getType().name().toUpperCase() + ": " + numbercolor + target.get(0).getLightLevel());
 			} else {
@@ -154,7 +162,7 @@ public class LightLevel extends JavaPlugin {
 		getDataFolder().mkdirs();
 		configLL = new Configuration(new File(this.getDataFolder(), LIGHT_LEVEL_CONFIG));
 		configLL.load();
-		if ((configLL.getProperty(WAND_ENABLE_KEY) == null || !(configLL.getProperty(WAND_ENABLE_DEFAULT_KEY) instanceof Boolean)) {
+		if ((configLL.getProperty(WAND_ENABLE_KEY) == null) || !(configLL.getProperty(WAND_ENABLE_KEY) instanceof Boolean)) {
 			configLL.setProperty(WAND_ENABLE_KEY, true);
 			configLL.save();
 		}
