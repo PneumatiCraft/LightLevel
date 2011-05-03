@@ -2,6 +2,7 @@ package com.fernferret.lightlevel.tests;
 
 import junit.framework.Assert;
 
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +22,11 @@ public class LightLevelTest extends LizaTest {
 		Liza.loadPluginJar("lightlevel-snapshot.jar");
 		
 		Assert.assertEquals("Unexpected number of loaded plugins", 1, this.pluginManager.getPlugins().length);
-		Assert.assertTrue("LightLevel was not found", null != this.pluginManager.getPlugin("LightLevel"));
+		
+		Plugin loadedPlugin = this.pluginManager.getPlugin("LightLevel");
+		
+		Assert.assertNotNull("LightLevel was not found", loadedPlugin);
+		Assert.assertTrue("Loaded plugin is not LightLevel", loadedPlugin instanceof com.fernferret.lightlevel.LightLevel);
 	}
 	
 	@Test
