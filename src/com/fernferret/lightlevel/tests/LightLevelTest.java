@@ -15,7 +15,7 @@ public class LightLevelTest extends LizaTest {
 			Assert.fail("Loading plugin failed with exception message: " + e.getMessage());
 		}
 		
-		Assert.assertEquals("Minecraft did not load plugin", 1, Liza.getMinecraftServer().server.getPluginManager().getPlugins().length);
-		Assert.assertTrue("LightLevel was not found", null != Liza.getMinecraftServer().server.getPluginManager().getPlugin("LightLevel"));
+		Assert.assertEquals("Minecraft did not load plugin", 1, Liza.getCraftServer().getPluginManager().getPlugins().length);
+		Assert.assertTrue("LightLevel was not found", null != Liza.getCraftServer().getPluginManager().getPlugin("LightLevel"));
 	}
 }
