@@ -4,3 +4,19 @@
 .settings/
 manifest
 bin/
+
+# Liza
+banned-ips.txt
+banned-players.txt
+bukkit.yml
+liza-error.txt
+liza-output.txt
+ops.txt
+server.log
+server.properties
+white-list.txt
+world
+
+# Dependency JARs
+Permissions.jar
+lightlevel-snapshot.jar
