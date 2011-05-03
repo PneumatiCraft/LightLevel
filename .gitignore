@@ -5,7 +5,7 @@
 manifest
 bin/
 
-# Liza
+# Minecraft
 banned-ips.txt
 banned-players.txt
 bukkit.yml
@@ -20,3 +20,6 @@ world
 # Dependency JARs
 Permissions.jar
 lightlevel-snapshot.jar
+
+# LightLevel
+LightLevel

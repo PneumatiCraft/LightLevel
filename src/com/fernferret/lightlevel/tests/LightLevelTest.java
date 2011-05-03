@@ -3,30 +3,41 @@ package com.fernferret.lightlevel.tests;
 import junit.framework.Assert;
 
 import org.bukkit.plugin.PluginManager;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.lithium3141.liza.*;
 
 public class LightLevelTest extends LizaTest {
+	private PluginManager pluginManager;
+	
+	@Before
+	public void findPluginManager() {
+		this.pluginManager = Liza.getCraftServer().getPluginManager();
+	}
+	
 	@Test
-	public void testEnable() {
+	public void testLoad() {
 		Liza.loadPluginJar("lightlevel-snapshot.jar");
 		
-		PluginManager pm = Liza.getCraftServer().getPluginManager();
+		Assert.assertEquals("Unexpected number of loaded plugins", 1, this.pluginManager.getPlugins().length);
+		Assert.assertTrue("LightLevel was not found", null != this.pluginManager.getPlugin("LightLevel"));
+	}
+	
+	@Test
+	public void testEnable() {
+		Liza.enablePlugin("LightLevel");
 		
-		Assert.assertEquals("Minecraft did not load plugin", 1, pm.getPlugins().length);
-		Assert.assertTrue("LightLevel was not found", null != pm.getPlugin("LightLevel"));
+		Assert.assertTrue("LightLevel was not enabled", this.pluginManager.getPlugin("LightLevel").isEnabled());
 	}
 	
 	@Test
 	public void testDisable() {
-		PluginManager pm = Liza.getCraftServer().getPluginManager();
-		
 		Liza.disablePlugin("LightLevel");
 		
-		Assert.assertEquals("Unexpected number of loaded plugins", 1, pm.getPlugins().length);
-		Assert.assertTrue("LightLevel was unloaded entirely", null != pm.getPlugin("LightLevel"));
+		Assert.assertEquals("Unexpected number of loaded plugins", 1, this.pluginManager.getPlugins().length);
+		Assert.assertTrue("LightLevel was unloaded entirely", null != this.pluginManager.getPlugin("LightLevel"));
 		
-		Assert.assertFalse("LightLevel was not disabled", pm.getPlugin("LightLevel").isEnabled());
+		Assert.assertFalse("LightLevel was not disabled", this.pluginManager.getPlugin("LightLevel").isEnabled());
 	}
 }
