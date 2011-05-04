@@ -2,7 +2,11 @@ package com.fernferret.lightlevel;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
+
+import javax.persistence.PersistenceException;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -17,6 +21,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
+import com.avaje.ebean.EbeanServer;
 import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
 
@@ -32,30 +37,50 @@ public class LightLevel extends JavaPlugin {
 	
 	private PermissionHandler permissions;
 	private boolean usePermissions;
+	private boolean defaultWandEnabled = false;
 	private String chatPrefixError = ChatColor.RED.toString();
+	private EbeanServer dbServer;
 	protected Configuration configLL;
 	private LLBlockListener blockListener;
 	
-	private ArrayList<Player> wandEnabled;
+	private HashMap<String, Boolean> wandEnabled;
 	
 	@Override
 	public void onDisable() {
-		// TODO: Save users to file
 		log.info(logPrefix + " - Disabled");
+		LLSession playerSession;
+		// Save the player's settings on restart
+	    for( String name: wandEnabled.keySet() ){
+	    	playerSession = dbServer.find(LLSession.class).where().eq("player", name).findUnique();
+	    	playerSession.setWandEnabled(wandEnabled.get(name));
+	    	dbServer.save(playerSession);
+	    }
+		getDatabase().endTransaction();
 	}
 	
 	@Override
 	public void onEnable() {
-		// TODO: Load users from file
 		loadConfiguration();
+		setupDatabase();
 		checkPermissions();
-		wandEnabled = new ArrayList<Player>();
+		wandEnabled = new HashMap<String, Boolean>();
 		PluginManager pm = getServer().getPluginManager();
 		blockListener = new LLBlockListener(this);
 		pm.registerEvent(Event.Type.BLOCK_DAMAGE, blockListener, Priority.Normal, this);
 		log.info(logPrefix + " - Version " + this.getDescription().getVersion() + " Enabled");
 	}
 	
+	private void setupDatabase() {
+		dbServer = this.getDatabase();
+		try {
+			dbServer.find(LLSession.class).findRowCount();
+        } catch (PersistenceException ex) {
+            log.info("Enabling database for " + this.getDescription().getName() + " due to first run");
+            this.installDDL();
+        }
+        
+	}
+
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (command.getName().equalsIgnoreCase("lightlevel") || command.getName().equalsIgnoreCase("ll")) {
@@ -77,23 +102,33 @@ public class LightLevel extends JavaPlugin {
 	 * @param p
 	 */
 	protected void togglePlayerWand(Player p) {
-		if(wandEnabled.contains(p)) {
-			wandEnabled.remove(p);
-		} else {
-			wandEnabled.add(p);
-		}
-		if(playerHasWandEnabled(p)) {
-			p.sendMessage(ChatColor.GREEN + "Wand Enabled!");
-		} else {
+		// Rather than load from the db every time, let's check the local hashmap:
+		// Also note the ! on the right side, we're reversing here so we don't have
+		// to anywhere else
+		boolean enabled = !playerHasWandEnabled(p);
+		wandEnabled.put(p.getName(), enabled);
+		
+		if(!enabled) {
 			p.sendMessage(ChatColor.RED + "Wand DISABLED!");
+		} else {
+			p.sendMessage(ChatColor.GREEN + "Wand Enabled!");
 		}
 	}
 	protected boolean playerHasWandEnabled(Player p) {
-		if(this.configLL.getBoolean(WAND_ENABLE_DEFAULT_KEY, true)) {
-			return !wandEnabled.contains(p);
+		if(wandEnabled.containsKey(p.getName())) {
+			return wandEnabled.get(p.getName());
+		} else {
+			// If we haven't yet, load them from the db
+			LLSession playerSession = dbServer.find(LLSession.class).where().eq("player", p.getName()).findUnique();
+			if(playerSession == null) {
+				playerSession = dbServer.createEntityBean(LLSession.class);
+				playerSession.setPlayer(p.getName());
+				playerSession.setWandEnabled(defaultWandEnabled);
+				dbServer.save(playerSession);
+			}
+			wandEnabled.put(p.getName(), playerSession.isWandEnabled());
+			return playerSession.isWandEnabled();
 		}
-		return wandEnabled.contains(p);
-		
 	}
 
 	protected void getLightLevel(Player p) {
@@ -175,5 +210,12 @@ public class LightLevel extends JavaPlugin {
 			configLL.save();
 		}
 	}
+	
+	@Override
+    public List<Class<?>> getDatabaseClasses() {
+        List<Class<?>> list = new ArrayList<Class<?>>();
+        list.add(LLSession.class);
+        return list;
+    }
 	
 }

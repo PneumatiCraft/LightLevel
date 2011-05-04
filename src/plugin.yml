@@ -2,6 +2,7 @@ name: LightLevel
 main: com.fernferret.lightlevel.LightLevel
 author: FernFerret
 version: 0.3
+database: true
 commands:
   lightlevel:
     description: States the light level of the block you are looking at
