@@ -4,3 +4,6 @@
 .settings/
 manifest
 bin/
+lib/
+minecraft/
+*.jar
