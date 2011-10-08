@@ -41,7 +41,6 @@ public class LightLevel extends JavaPlugin {
 
     private HashMap<String, Boolean> wandEnabled;
     private CommandHandler commandHandler;
-    private LLPermissions llPermissions;
 
     @Override
     public void onDisable() {
@@ -135,7 +134,7 @@ public class LightLevel extends JavaPlugin {
         }
     }
 
-    protected void getLightLevel(Player p) {
+    public void getLightLevel(Player p) {
         ArrayList<Block> target = (ArrayList<Block>) p.getLastTwoTargetBlocks(null, 50);
         // If the block isn't air, continue, otherwise show error
         if (target.size() >= 2 && !target.get(1).getType().equals(Material.matchMaterial("AIR"))) {

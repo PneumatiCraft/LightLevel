@@ -1,8 +1,8 @@
 package com.fernferret.lightlevel.commands;
 
 import com.fernferret.lightlevel.LightLevel;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 
 import java.util.List;
@@ -24,6 +24,10 @@ public class ShowCommand extends LightLevelCommand {
 
     @Override
     public void runCommand(CommandSender sender, List<String> args) {
-
+        if (sender instanceof Player) {
+            this.plugin.getLightLevel((Player) sender);
+        } else {
+            sender.sendMessage("This command must be run as a player!");
+        }
     }
 }
