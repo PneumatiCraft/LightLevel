@@ -1,6 +1,10 @@
 package com.fernferret.lightlevel;
 
 import com.avaje.ebean.EbeanServer;
+import com.fernferret.lightlevel.commands.HelpCommand;
+import com.fernferret.lightlevel.commands.ShowCommand;
+import com.fernferret.lightlevel.commands.WandCommand;
+import com.pneumaticraft.commandhandler.CommandHandler;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -9,8 +13,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
@@ -18,6 +20,7 @@ import org.bukkit.util.config.Configuration;
 import javax.persistence.PersistenceException;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -32,14 +35,13 @@ public class LightLevel extends JavaPlugin {
     public static final String WAND_ENABLE_KEY = "wand.enable";
     public static final String WAND_ENABLE_DEFAULT_KEY = "wand.default";
 
-    private boolean usePermissions;
-    private boolean defaultWandEnabled = false;
     private String chatPrefixError = ChatColor.RED.toString();
     private EbeanServer dbServer;
     protected Configuration configLL;
-    private LLBlockListener blockListener;
 
     private HashMap<String, Boolean> wandEnabled;
+    private CommandHandler commandHandler;
+    private LLPermissions llPermissions;
 
     @Override
     public void onDisable() {
@@ -54,21 +56,24 @@ public class LightLevel extends JavaPlugin {
         getDatabase().endTransaction();
     }
 
-    @Override
-    public void onEnable() {
-        loadConfiguration();
-        setupDatabase();
-        setupPermissions();
-        wandEnabled = new HashMap<String, Boolean>();
-        PluginManager pm = getServer().getPluginManager();
-        blockListener = new LLBlockListener(this);
-        pm.registerEvent(Event.Type.BLOCK_DAMAGE, blockListener, Priority.Normal, this);
-        log.info(logPrefix + " - Version " + this.getDescription().getVersion() + " Enabled");
+    private void registerCommands() {
+        // Intro Commands
+        this.commandHandler.registerCommand(new HelpCommand(this));
+        this.commandHandler.registerCommand(new ShowCommand(this));
+        this.commandHandler.registerCommand(new WandCommand(this));
     }
 
-    private void setupPermissions() {
-        Permission use = new Permission("lightlevel.use", "Allows people to use /ll", PermissionDefault.OP);
-        this.getServer().getPluginManager().addPermission(use);
+    @Override
+    public void onEnable() {
+        this.commandHandler = new CommandHandler(this, new LLPermissions(this));
+        loadConfiguration();
+        setupDatabase();
+        this.registerCommands();
+        wandEnabled = new HashMap<String, Boolean>();
+        PluginManager pm = getServer().getPluginManager();
+        LLBlockListener blockListener = new LLBlockListener(this);
+        pm.registerEvent(Event.Type.BLOCK_DAMAGE, blockListener, Priority.Normal, this);
+        log.info(logPrefix + " - Version " + this.getDescription().getVersion() + " Enabled");
     }
 
     private void setupDatabase() {
@@ -84,19 +89,13 @@ public class LightLevel extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("lightlevel") || command.getName().equalsIgnoreCase("ll")) {
-            if (sender instanceof Player) {
-                getLightLevel((Player) sender);
-            }
+        if (!this.isEnabled()) {
+            sender.sendMessage("This plugin is Disabled!");
             return true;
         }
-        if (command.getName().equalsIgnoreCase("llwand")) {
-            if (sender instanceof Player) {
-                togglePlayerWand((Player) sender);
-            }
-            return true;
-        }
-        return false;
+        ArrayList<String> allArgs = new ArrayList<String>(Arrays.asList(args));
+        allArgs.add(0, command.getName());
+        return this.commandHandler.locateAndRunCommand(sender, allArgs);
     }
 
     /**
@@ -104,19 +103,17 @@ public class LightLevel extends JavaPlugin {
      *
      * @param p
      */
-    protected void togglePlayerWand(Player p) {
+    public void togglePlayerWand(Player p) {
         // Rather than load from the db every time, let's check the local hashmap:
         // Also note the ! on the right side, we're reversing here so we don't have
         // to anywhere else
-        if (hasPermission(p, "lightlevel.use")) {
-            boolean enabled = !playerHasWandEnabled(p);
-            wandEnabled.put(p.getName(), enabled);
+        boolean enabled = !playerHasWandEnabled(p);
+        wandEnabled.put(p.getName(), enabled);
 
-            if (!enabled) {
-                p.sendMessage(ChatColor.RED + "Wand DISABLED!");
-            } else {
-                p.sendMessage(ChatColor.GREEN + "Wand Enabled!");
-            }
+        if (!enabled) {
+            p.sendMessage(ChatColor.RED + "Wand DISABLED!");
+        } else {
+            p.sendMessage(ChatColor.GREEN + "Wand Enabled!");
         }
     }
 
@@ -129,6 +126,7 @@ public class LightLevel extends JavaPlugin {
             if (playerSession == null) {
                 playerSession = dbServer.createEntityBean(LLSession.class);
                 playerSession.setPlayer(p.getName());
+                boolean defaultWandEnabled = false;
                 playerSession.setWandEnabled(defaultWandEnabled);
                 dbServer.save(playerSession);
             }
@@ -138,28 +136,14 @@ public class LightLevel extends JavaPlugin {
     }
 
     protected void getLightLevel(Player p) {
-        if (hasPermission(p, "lightlevel.use")) {
-            ArrayList<Block> target = (ArrayList<Block>) p.getLastTwoTargetBlocks(null, 50);
-            // If the block isn't air, continue, otherwise show error
-            if (target.size() >= 2 && !target.get(1).getType().equals(Material.matchMaterial("AIR"))) {
-                String numbercolor = getColorFromLightLevel(target.get(0).getLightLevel()).toString();
-                p.sendMessage(target.get(1).getType().name().toUpperCase() + ": " + numbercolor + target.get(0).getLightLevel());
-            } else {
-                p.sendMessage(ChatColor.RED + "Get closer!");
-            }
+        ArrayList<Block> target = (ArrayList<Block>) p.getLastTwoTargetBlocks(null, 50);
+        // If the block isn't air, continue, otherwise show error
+        if (target.size() >= 2 && !target.get(1).getType().equals(Material.matchMaterial("AIR"))) {
+            String numbercolor = getColorFromLightLevel(target.get(0).getLightLevel()).toString();
+            p.sendMessage(target.get(1).getType().name().toUpperCase() + ": " + numbercolor + target.get(0).getLightLevel());
+        } else {
+            p.sendMessage(ChatColor.RED + "Get closer!");
         }
-    }
-
-    /**
-     * Check to see if Player p has the permission given
-     *
-     * @param sender     The CommandSender to check
-     * @param permission The permission to check
-     *
-     * @return True if the player has permission, false if not
-     */
-    public boolean hasPermission(CommandSender sender, String permission) {
-        return (sender.hasPermission(permission));
     }
 
     /**
@@ -207,4 +191,7 @@ public class LightLevel extends JavaPlugin {
         return list;
     }
 
+    public CommandHandler getCommandHandler() {
+        return this.commandHandler;
+    }
 }
