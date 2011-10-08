@@ -2,8 +2,8 @@
 .classpath
 .project
 .settings/
-manifest
 bin/
-lib/
-minecraft/
 *.jar
+*.iml
+*.idea
+target/
