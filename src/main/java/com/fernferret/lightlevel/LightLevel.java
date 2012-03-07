@@ -10,15 +10,16 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
-import org.bukkit.event.Event.Priority;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.config.Configuration;
 
 import javax.persistence.PersistenceException;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ public class LightLevel extends JavaPlugin {
 
     private String chatPrefixError = ChatColor.RED.toString();
     private EbeanServer dbServer;
-    protected Configuration configLL;
+    protected FileConfiguration configLL;
 
     private HashMap<String, Boolean> wandEnabled;
     private CommandHandler commandHandler;
@@ -71,7 +72,7 @@ public class LightLevel extends JavaPlugin {
         wandEnabled = new HashMap<String, Boolean>();
         PluginManager pm = getServer().getPluginManager();
         LLBlockListener blockListener = new LLBlockListener(this);
-        pm.registerEvent(Event.Type.BLOCK_DAMAGE, blockListener, Priority.Normal, this);
+        pm.registerEvents(blockListener, this);
         log.info(logPrefix + " - Version " + this.getDescription().getVersion() + " Enabled");
     }
 
@@ -167,19 +168,26 @@ public class LightLevel extends JavaPlugin {
 
     private void loadConfiguration() {
         getDataFolder().mkdirs();
-        configLL = new Configuration(new File(this.getDataFolder(), LIGHT_LEVEL_CONFIG));
-        configLL.load();
-        if ((configLL.getProperty(WAND_ENABLE_KEY) == null) || !(configLL.getProperty(WAND_ENABLE_KEY) instanceof Boolean)) {
-            configLL.setProperty(WAND_ENABLE_KEY, true);
-            configLL.save();
+        configLL = YamlConfiguration.loadConfiguration(new File(this.getDataFolder(), LIGHT_LEVEL_CONFIG));
+        if ((configLL.get(WAND_ENABLE_KEY) == null) || !(configLL.get(WAND_ENABLE_KEY) instanceof Boolean)) {
+            configLL.get(WAND_ENABLE_KEY, true);
+            this.saveConfig();
         }
-        if ((configLL.getProperty(WAND_KEY) == null) || !(configLL.getProperty(WAND_KEY) instanceof Integer)) {
-            configLL.setProperty(WAND_KEY, TORCH_ITEM);
-            configLL.save();
+        if ((configLL.get(WAND_KEY) == null) || !(configLL.get(WAND_KEY) instanceof Integer)) {
+            configLL.get(WAND_KEY, TORCH_ITEM);
+            this.saveConfig();
         }
-        if ((configLL.getProperty(WAND_ENABLE_DEFAULT_KEY) == null) || !(configLL.getProperty(WAND_ENABLE_DEFAULT_KEY) instanceof Boolean)) {
-            configLL.setProperty(WAND_ENABLE_DEFAULT_KEY, true);
-            configLL.save();
+        if ((configLL.get(WAND_ENABLE_DEFAULT_KEY) == null) || !(configLL.get(WAND_ENABLE_DEFAULT_KEY) instanceof Boolean)) {
+            configLL.get(WAND_ENABLE_DEFAULT_KEY, true);
+            this.saveConfig();
+        }
+    }
+
+    public void saveConfig() {
+        try {
+            this.configLL.save(new File(this.getDataFolder(), LIGHT_LEVEL_CONFIG));
+        } catch (IOException e) {
+            this.log.warning("Could not save config!");
         }
     }
 

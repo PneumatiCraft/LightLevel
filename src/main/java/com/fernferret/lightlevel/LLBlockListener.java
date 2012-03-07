@@ -1,17 +1,18 @@
 package com.fernferret.lightlevel;
 
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.event.block.BlockListener;
 
-public class LLBlockListener extends BlockListener {
+public class LLBlockListener implements Listener {
     private LightLevel plugin;
 
     public LLBlockListener(LightLevel plugin) {
         this.plugin = plugin;
     }
 
-    @Override
+    @EventHandler
     public void onBlockDamage(BlockDamageEvent event) {
         Player p = event.getPlayer();
         if (this.plugin.configLL.getBoolean(LightLevel.WAND_ENABLE_KEY, true) &&
