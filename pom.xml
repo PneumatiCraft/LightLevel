@@ -15,6 +15,10 @@
             <id>OnARandomBox</id>
             <url>http://repo.onarandombox.com/artifactory/repo</url>
         </repository>
+        <repository>
+            <id>Bukkit Official</id>
+            <url>http://repo.bukkit.org/content/repositories/public</url>
+        </repository>
     </repositories>
     <build>
         <defaultGoal>clean package</defaultGoal>
@@ -28,27 +32,6 @@
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
-            </plugin>
-            <!-- Build Helper - Additional Source Folders -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.7</version>
-                <executions>
-                    <execution>
-                        <id>add-wsdl-source</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.basedir}/lib/commandhandler/src</source>
-                                <source>${project.basedir}/lib/commandhandler/lib/ShellParser/src</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>com.google.code.maven-replacer-plugin</groupId>
@@ -84,14 +67,64 @@
                     </archive>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.fernferret.allpay:AllPay</include>
+                                    <include>com.pneumaticraft.commandhandler:CommandHandler</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.fernferret.allpay</pattern>
+                                    <shadedPattern>com.fernferret.allpay.lightlevel</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.pneumaticraft.commandhandler</pattern>
+                                    <shadedPattern>com.pneumaticraft.commandhandler.lightlevel</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
     <dependencies>
+        <!-- CommandHandler Dependency -->
+        <dependency>
+            <groupId>com.pneumaticraft.commandhandler</groupId>
+            <artifactId>CommandHandler</artifactId>
+            <version>6</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
+        <!-- CommandHandler Dependency -->
+        <!-- AllPay Dependency -->
+        <dependency>
+            <groupId>com.fernferret.allpay</groupId>
+            <artifactId>AllPay</artifactId>
+            <version>8</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
+        <!-- AllPay Dependency -->
         <!-- Bukkit Dependency -->
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>1.2.3-R0.2-SNAPSHOT</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
