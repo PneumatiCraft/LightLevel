@@ -13,7 +13,7 @@
     <repositories>
         <repository>
             <id>OnARandomBox</id>
-            <url>http://repo.onarandombox.com/artifactory/repo</url>
+            <url>http://repo.onarandombox.com/content/groups/public</url>
         </repository>
         <repository>
             <id>Bukkit Official</id>
@@ -106,7 +106,7 @@
         <dependency>
             <groupId>com.pneumaticraft.commandhandler</groupId>
             <artifactId>CommandHandler</artifactId>
-            <version>6</version>
+            <version>7</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
@@ -115,7 +115,7 @@
         <dependency>
             <groupId>com.fernferret.allpay</groupId>
             <artifactId>AllPay</artifactId>
-            <version>8</version>
+            <version>10</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
@@ -124,7 +124,7 @@
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>1.2.3-R0.2-SNAPSHOT</version>
+            <version>1.4.2-R0.3-SNAPSHOT</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>

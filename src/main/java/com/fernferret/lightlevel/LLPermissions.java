@@ -7,7 +7,7 @@ import org.bukkit.permissions.Permission;
 import java.util.List;
 
 /**
- * Multiverse 2
+ * LightLevel
  *
  * @author fernferret
  */
